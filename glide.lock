@@ -1,0 +1,13 @@
+hash: 920f8dd2d4aadbccb342b2cfb95b0f4af7b6f9179fc0acf1a14fa4fcf827504d
+updated: 2019-09-26T17:47:00.103730444+07:00
+imports:
+- name: github.com/gorilla/mux
+  version: 00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15
+- name: github.com/joho/godotenv
+  version: 23d116af351c84513e1946b527c88823e476be13
+- name: github.com/lib/pq
+  version: 3427c32cb71afc948325f299f040e53c1dd78979
+  subpackages:
+  - oid
+  - scram
+testImports: []

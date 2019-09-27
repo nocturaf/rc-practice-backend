@@ -1,0 +1,8 @@
+package: remote-config
+import:
+- package: github.com/lib/pq
+  version: v1.2.0
+- package: github.com/joho/godotenv
+  version: v1.3.0
+- package: github.com/gorilla/mux
+  version: v1.7.3
