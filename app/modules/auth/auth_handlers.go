@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"github.com/dewasa98/rc-practice-backend/app/helpers"
-	"github.com/dewasa98/rc-practice-backend/app/models"
+	"rc-practice-backend/app/helpers"
+	"rc-practice-backend/app/models"
 )
 
 func Register(res http.ResponseWriter, req *http.Request) {
