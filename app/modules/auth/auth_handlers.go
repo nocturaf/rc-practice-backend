@@ -5,8 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"github.com/dewasa98/rc-practice-backend/app/helpers"
-	"github.com/dewasa98/rc-practice-backend/app/models"
+	"rc-practice-backend/app/helpers"
+	"rc-practice-backend/app/models"
+
+	"github.com/lib/pq"
 )
 
 func Register(res http.ResponseWriter, req *http.Request) {
@@ -37,8 +39,13 @@ func Register(res http.ResponseWriter, req *http.Request) {
 		helpers.RenderJSON(res, createdUser, http.StatusOK)
 
 	} else {
-		log.Println("Sending an OK message to server...")
-		helpers.RenderJSON(res, []byte(`{"message" : "Internal Server Error"}`), 500)
+		pqError := insert.(*pq.Error)
+		// log.Println(pqError.Code)
+		jsonMessage := []byte(`message: "Unknown Error"`)
+		if pqError.Code == "23505" {
+			jsonMessage = []byte(`message: "E-mail already exists"`)
+		}
+		helpers.RenderJSON(res, jsonMessage, 500)
 
 	}
 }

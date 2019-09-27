@@ -3,5 +3,6 @@ CREATE TABLE public.users (
     first_name character varying(255),
     last_name character varying(255),
     email character varying(255),
-    password text
+    password text,
+    UNIQUE(email)
 );
