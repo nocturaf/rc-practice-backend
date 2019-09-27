@@ -1,10 +1,13 @@
 package auth
 
+//ini importss
+// commit rafli
+//ss Xuer
 import (
 	"fmt"
-	"rc-practice-backend/app/helpers"
-	"rc-practice-backend/app/models"
-	"rc-practice-backend/config"
+	"github.com/dewasa98/rc-practice-backend/app/helpers"
+	"github.com/dewasa98/rc-practice-backend/app/models"
+	"github.com/dewasa98/rc-practice-backend/config"
 )
 
 func HashUserPassword(user *models.User) string {

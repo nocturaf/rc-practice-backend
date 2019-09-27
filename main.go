@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"rc-practice-backend/app/modules/auth"
+	"github.com/dewasa98/rc-practice-backend/app/modules/auth"
 
 	"github.com/gorilla/mux"
 )
