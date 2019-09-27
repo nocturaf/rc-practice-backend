@@ -1,12 +1,12 @@
 package auth
 
-import(
-	"net/http"
-	"log"
-	"io/ioutil"
+import (
 	"encoding/json"
-	"remote-config/app/models"
-	"remote-config/app/helpers"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"rc-practice-backend/app/helpers"
+	"rc-practice-backend/app/models"
 )
 
 func Register(res http.ResponseWriter, req *http.Request) {
@@ -37,7 +37,7 @@ func Register(res http.ResponseWriter, req *http.Request) {
 		helpers.RenderJSON(res, createdUser, http.StatusOK)
 
 	} else {
-		
+		log.Println("Sending an OK message to server...")
 		helpers.RenderJSON(res, []byte(`{"message" : "Internal Server Error"}`), 500)
 
 	}
