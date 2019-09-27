@@ -1,13 +1,13 @@
 package auth
 
-import(
+import (
 	"fmt"
-	"remote-config/app/models"
-	"remote-config/app/helpers"
-	"remote-config/config"
+	"rc-practice-backend/app/helpers"
+	"rc-practice-backend/app/models"
+	"rc-practice-backend/config"
 )
 
-func HashUserPassword(user *models.User) string  {
+func HashUserPassword(user *models.User) string {
 	hashedPassword, _ := helpers.HashPassword(user.Password)
 	return string(hashedPassword)
 }
