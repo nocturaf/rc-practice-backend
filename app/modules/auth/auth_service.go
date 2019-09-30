@@ -1,39 +1,73 @@
 package auth
 
-//ini importss
-// commit rafli
-//ss Xuer
 import (
+	"github.com/lib/pq"
 	"fmt"
-	"rc-practice-backend/app/helpers"
 	"rc-practice-backend/app/models"
-	"rc-practice-backend/config"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-func HashUserPassword(user *models.User) string {
-	hashedPassword, _ := helpers.HashPassword(user.Password)
-	return string(hashedPassword)
+// GetUsers Query all users
+func (h *Handler) GetUsers() ([]models.User, error) {
+	query := "SELECT id, first_name, last_name, email, password FROM users;"
+	rows, err := h.DB.Query(query)
+	if err != nil {
+		fmt.Printf("user_service-GetUsers-query: %s\n", err)
+		return nil, err
+	}
+
+	var users []models.User
+
+	for rows.Next(){
+		user := models.User{}
+		
+		err := rows.Scan(
+			&user.ID,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+		)
+		if err != nil {
+			fmt.Printf("user_service-GetUsers-Scan: %s \n",err)
+		}
+		
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
-func InsertUser(user *models.User) (error, int) {
+// InsertUser insert user object to database
+func (h *Handler) InsertUser (user models.User)(error){
 
-	conn, err := config.ConnectDB()
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+
+	query := fmt.Sprintf("insert into users (first_name, last_name, email, password) values ('%s', '%s', '%s', '%s');", user.FirstName, user.LastName, user.Email, hashedPassword)
+
+	_, err = h.DB.Exec(query)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("user_service-InsertUser-Exec: %s: %s\n", err.(*pq.Error), err)
+		return err
 	}
 
-	query := `INSERT INTO "users"("first_name", "last_name", "email", "password") VALUES($1, $2, $3, $4) RETURNING id`
-	statement, err := conn.Prepare(query)
-	if err != nil {
-		return err, 0
-	}
-	defer statement.Close()
+	return nil
+}
 
-	var userID int
-	err = statement.QueryRow(user.FirstName, user.LastName, user.Email, HashUserPassword(user)).Scan(&userID)
+
+// GetStoredPassword returns user password stored in database, error if no such user exist
+func (h *Handler) GetStoredPassword(cred Credential)(string, error){
+	query := fmt.Sprintf("select password from users where email='%s';", cred.Email)
+	rows := h.DB.QueryRow(query)
+	
+	var storedPassword string
+	
+	err := rows.Scan(&storedPassword)
 	if err != nil {
-		return err, 0
+		fmt.Printf("user_service-GetStoredPassword-Scan: %s \n", err)
+		return "", err
 	}
 
-	return nil, userID
+	return storedPassword, nil
 }

@@ -5,6 +5,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// RenderJSON returns message in JSON to http body
 func RenderJSON(w http.ResponseWriter, data []byte, status int) {
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -19,10 +20,12 @@ func RenderJSON(w http.ResponseWriter, data []byte, status int) {
 	w.Write(data)
 }
 
+// HashPassword to hash user password
 func HashPassword(password string) ([]byte, error) {
 	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
 
+// ComparePassword to compare user input password with hashed password stored in db
 func ComparePassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

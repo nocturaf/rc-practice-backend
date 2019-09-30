@@ -2,40 +2,39 @@ package config
 
 import (
 	"database/sql"
-	"os"
 	"fmt"
-	"log"
+	"rc-practice-backend/app/modules/auth"
+	"os"
 	"strconv"
-	
-	_ "github.com/lib/pq"
+
 	"github.com/joho/godotenv"
+
+	// postgres driver for sql Interface
+	_ "github.com/lib/pq"
 )
 
-
-func ConnectDB() (*sql.DB, error) {
-
+// ConnectDB returns connections or error
+func ConnectDB(handler *auth.Handler) error {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		fmt.Printf("db-ConnectDB-Load: %s\n", err)
 	}
 
-	host      := os.Getenv("PG_HOST")
-	user      := os.Getenv("PG_USER")
-	password  := os.Getenv("PG_PASSWORD")
-	dbname    := os.Getenv("PG_DBNAME")
+	host := os.Getenv("PG_HOST")
+	username := os.Getenv("PG_USER")
+	pass := os.Getenv("PG_PASSWORD")
+	dbname := os.Getenv("PG_DBNAME")
+	port, _ := strconv.Atoi(os.Getenv("PG_PORT"))
+	// port := os.Getenv("PG_PORT")
 
-	// prevent port load as a string
-	port, err := strconv.Atoi(os.Getenv("PG_PORT"))
+	dbInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, username, pass, dbname)
+
+	db, err := sql.Open("postgres", dbInfo)
 	if err != nil {
-		return nil, err
+		fmt.Printf("db-ConnectDB-Open:%s\n", err)
 	}
+	fmt.Printf("Success Connection to DB\n")
+	handler.DB = db
 
-	psqlCredentials := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", host, port, user, password, dbname)
-	
-	db, err := sql.Open("postgres", psqlCredentials)
-	if err != nil {
-		panic(err)
-	}
-
-	return db, nil
+	return nil
 }

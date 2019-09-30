@@ -1,24 +1,40 @@
 package main
 
 import (
+	"fmt"
+	"html"
 	"log"
 	"net/http"
 
 	"rc-practice-backend/app/modules/auth"
+	"rc-practice-backend/config"
 
 	"github.com/gorilla/mux"
 )
 
-func main() {
+func index(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+}
 
-	// Init router
+func main() {
+	fmt.Println("Look here")
+
+	handler := new(auth.Handler)
+
+	err := config.ConnectDB(handler)
+	if err != nil {
+		fmt.Printf("main-ConnectDB: %s\n", err)
+		return
+	}
+	defer handler.DB.Close()
+
 	router := mux.NewRouter()
 
-	// App routes
-	router.HandleFunc("/api/users/register", auth.Register).Methods("POST")
+	router.HandleFunc("/api", index).Methods("GET")
+	router.HandleFunc("/api/users", handler.GetUsersHandler).Methods("GET")
+	router.HandleFunc("/api/users/register", handler.Register).Methods("POST")
+	router.HandleFunc("/api/users/login", handler.Login).Methods("POST")
 
-	// listening
-	log.Println("Listening...")
-	log.Fatal(http.ListenAndServe(":8000", router))
-
+	fmt.Println("Listening to port 8080")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
