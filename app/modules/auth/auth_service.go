@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/lib/pq"
 	"fmt"
+
 	"rc-practice-backend/app/models"
 
 	"golang.org/x/crypto/bcrypt"
