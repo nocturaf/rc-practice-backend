@@ -22,3 +22,10 @@ type Claims struct {
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
+
+// JSONMessage object 
+type JSONMessage struct {
+	Status string `json:"status"`
+	ErrorCode string `json:"errorCode"`
+	Message string `json:"message"`
+}

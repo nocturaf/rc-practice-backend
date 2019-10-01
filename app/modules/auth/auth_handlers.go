@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 
@@ -20,95 +22,130 @@ import (
 // DELETE LATER
 func (h *Handler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	// Get cookie for authentication
+	status := http.StatusOK
+	message := []byte("")
+
 	err := CheckCookie(w, r)
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-CheckCookie: %s\n", err)
+		status = http.StatusBadRequest
 		return
 	}
 
-	// Init User List 
+	// Init User List
 	users, err := h.GetUsers()
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-GetUsers: %s\n", err)
+		status = http.StatusBadRequest
 		return
 	}
 
-	userBytes, err := json.Marshal(users)
+	message, err = json.Marshal(users)
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-Marshal: %s\n", err)
+		status = http.StatusBadRequest
 		return
 	}
 
-	helpers.RenderJSON(w, userBytes, http.StatusOK)
+	helpers.RenderJSON(w, message, status)
 }
 
 // Register handles user registration
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	var status = http.StatusOK
+	var message = JSONMessage{
+		Status:  "Success",
+		Message: "User Registered",
+	}
+
+	// defer helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Printf("auth_handler-Register-ReadAll: %s \n", err)
-		messageByte := []byte(`message: "Failed to read body`)
-		helpers.RenderJSON(w, messageByte, http.StatusBadRequest)
+		fmt.Printf("auth_handler-Register-ReadAll: %s\n", err)
+		message.Status =  "Failed"
+		message.Message = fmt.Sprintf("ioutil.ReadAll request Body: %s", err.Error())
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
 	user := models.User{}
-
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		fmt.Printf("auth_handler-Register-Unmarshal: %s \n", err)
+		fmt.Printf("auth_handler-Register-Unmarshal: %s\n", err.Error())
+		message.Status =  "Failed"
+		message.Message = fmt.Sprintf("auth_handler-Register-Unmarshal: %s", err.Error())
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
 	err = h.InsertUser(user)
-	if err != nil {
-		fmt.Printf("auth_handler-Register-InsertUser: %s\n", err)
-		helpers.RenderJSON(w, []byte(`{
-			status: "failed",
-			message: "Failed to register user"
-		}`), http.StatusBadRequest)
+	if err, ok := err.(*pq.Error); ok {
+		fmt.Printf("auth_handler-Register-InsertUser: %s\n", err.Error())
+		message.Status =  "Failed"
+		message.ErrorCode = fmt.Sprintf("%s", err.Code)
+		message.Message = fmt.Sprintf("%s", err.Error())
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
-	helpers.RenderJSON(w, []byte(`{
-		status: "success",
-		message: "Insert User Success"
-	}`), http.StatusOK)
+	helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
+	return
 }
 
 // Login handles user logging in
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	status := http.StatusOK
+	message := JSONMessage{
+		Status:  "Success",
+		Message: "Login User Success",
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Printf("auth_handler-Login-ReadAll: %s\n", err)
-		messageByte := []byte(`message: "Failed to read body`)
-		helpers.RenderJSON(w, messageByte, http.StatusBadRequest)
+		fmt.Printf("auth_handler-Login-ReadAll: %s\n", err.Error())
+		message.Status = "Failed"
+		message.Message = "Failed to read body"
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
 	userCred := Credential{}
-
 	err = json.Unmarshal(body, &userCred)
 	if err != nil {
 		fmt.Printf("auth_handler-Login-Unmarshal: %s\n", err)
+		message.Status = "Failed"
+		message.Message = "Failed to Unmarshal body to usercred"
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
 	storedPassword, err := h.GetStoredPassword(userCred)
-	if err != nil {
+	if err, ok := err.(*pq.Error); ok {
 		fmt.Printf("auth_handler-Login-GetStoredPassword: %s\n", err)
-		helpers.RenderJSON(w, []byte(`{
-			status: "Failed",
-			message: "no such user in db"
-		}`), http.StatusBadRequest)
+		message.Status = "Failed"
+		message.ErrorCode = fmt.Sprintf("%s", err.Code)
+		message.Message = "User does not exist"	
+		status = http.StatusBadRequest
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(userCred.Password)); err != nil {
-		fmt.Printf("auth_handler-Login-ComparedHashAndPassword: %s\n", err)
-		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Printf("auth_handler-Login-ComparedHashAndPassword: %s", err)
+		message.Status =  "Failed"
+		message.Message = "Username or password is wrong"
+		status = http.StatusUnauthorized
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
+
+	helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 
 	// JWT Token Below
 	expirationTime := time.Now().Add(5 * time.Minute)
@@ -125,7 +162,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		fmt.Printf("auth_handler-Login-SignedString: %s\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		message.Status =  "Failed"
+		message.Message = "Failed to signed server secret key"
+		status = http.StatusInternalServerError
+		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
@@ -136,9 +176,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:    "/",
 	}
 	http.SetCookie(w, &cookie)
-
-	helpers.RenderJSON(w, []byte(`{
-		status: "success",
-		message: "Login succeed"
-	}`), http.StatusOK)
+	
+	return
 }

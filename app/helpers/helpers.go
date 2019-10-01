@@ -1,7 +1,10 @@
 package helpers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,4 +31,14 @@ func HashPassword(password string) ([]byte, error) {
 // ComparePassword to compare user input password with hashed password stored in db
 func ComparePassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+// MarshalJSON to marshal j
+func MarshalJSON(message interface{}) []byte {
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println(err.Error())
+		jsonData = []byte(err.Error())
+	}
+	return jsonData
 }
