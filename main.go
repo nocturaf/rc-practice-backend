@@ -10,6 +10,7 @@ import (
 	"rc-practice-backend/config"
 
 	"github.com/gorilla/mux"
+	gorillaHandler "github.com/gorilla/handlers"
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +30,9 @@ func main() {
 	defer handler.DB.Close()
 
 	router := mux.NewRouter()
+	headers := gorillaHandler.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := gorillaHandler.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
+	origins := gorillaHandler.AllowedOrigins([]string{"*"})
 
 	router.HandleFunc("/api", index).Methods("GET")
 	router.HandleFunc("/api/users", handler.GetUsersHandler).Methods("GET")
@@ -36,5 +40,5 @@ func main() {
 	router.HandleFunc("/api/users/login", handler.Login).Methods("POST")
 
 	fmt.Println("Listening to port 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", gorillaHandler.CORS(headers, methods, origins)(router)))
 }

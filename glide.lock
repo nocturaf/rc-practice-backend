@@ -1,6 +1,10 @@
-hash: 920f8dd2d4aadbccb342b2cfb95b0f4af7b6f9179fc0acf1a14fa4fcf827504d
-updated: 2019-09-26T17:47:00.103730444+07:00
+hash: ff8c26d08f083f1f77ba7e858d9876627ef2d4c5345a80b327fa49cea8d738ae
+updated: 2019-10-01T11:09:40.449518497+07:00
 imports:
+- name: github.com/dgrijalva/jwt-go
+  version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
+- name: github.com/gorilla/handlers
+  version: 8a3748addc242fc560bd6d4ff28b0374c010b1b4
 - name: github.com/gorilla/mux
   version: 00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15
 - name: github.com/joho/godotenv
@@ -10,4 +14,9 @@ imports:
   subpackages:
   - oid
   - scram
+- name: golang.org/x/crypto
+  version: a832865fa7ada6126f4c6124ac49f71be71bff2a
+  subpackages:
+  - bcrypt
+  - blowfish
 testImports: []
