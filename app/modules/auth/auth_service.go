@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/lib/pq"
 	"fmt"
 
 	"rc-practice-backend/app/models"
@@ -41,7 +40,7 @@ func (h *Handler) GetUsers() ([]models.User, error) {
 }
 
 // InsertUser insert user object to database
-func (h *Handler) InsertUser (user models.User)(error){
+func (h *Handler) InsertUser(user models.User) (error){
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
 
@@ -49,7 +48,7 @@ func (h *Handler) InsertUser (user models.User)(error){
 
 	_, err = h.DB.Exec(query)
 	if err != nil {
-		fmt.Printf("user_service-InsertUser-Exec: %s: %s\n", err.(*pq.Error), err)
+		fmt.Printf("user_service-InsertUser-Exec: %s\n", err)
 		return err
 	}
 
