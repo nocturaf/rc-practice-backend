@@ -40,6 +40,6 @@ func main() {
 	router.HandleFunc("/api/users/register", handler.Register).Methods("POST")
 	router.HandleFunc("/api/users/login", handler.Login).Methods("POST")
 
-	fmt.Printf("%s :: Listening to port 8080", time.Now())
+	fmt.Printf("%s :: Listening to port 8080\n", time.Now())
 	log.Fatal(http.ListenAndServe(":8080", gorillaHandler.CORS(headers, methods, origins)(router)))
 }

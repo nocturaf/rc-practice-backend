@@ -15,11 +15,13 @@ type Handler struct {
 type Credential struct {
 	Email string `json:"email"`
 	Password string `json:"password"`
+	Role int `json:"role"`
 }
 
 // Claims object from JWT to store fields like expiry time
 type Claims struct {
 	Email string `json:"email"`
+	Role int `json:"role"`
 	jwt.StandardClaims
 }
 

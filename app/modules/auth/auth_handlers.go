@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/lib/pq"
 
-	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 
 	"rc-practice-backend/app/helpers"
@@ -98,12 +95,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 // Login handles user logging in
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	// Create JSON Message Object
 	status := http.StatusOK
 	message := JSONMessage{
 		Status:  "Success",
 		Message: "Login User Success",
 	}
 
+	// Read Request Body
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Printf("auth_handler-Login-ReadAll: %s\n", err.Error())
@@ -114,29 +113,34 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Unmarshall request body to Credential Object
 	userCred := Credential{}
 	err = json.Unmarshal(body, &userCred)
 	if err != nil {
 		fmt.Printf("auth_handler-Login-Unmarshal: %s\n", err)
 		message.Status = "Failed"
 		message.Message = "Failed to Unmarshal body to usercred"
-		status = http.StatusBadRequest
+		status = http.StatusInternalServerError
 		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
 
-	storedPassword, err := h.GetStoredPassword(userCred)
+	// Get User password from DB
+	storedPassword, role, err := h.GetStoredPassword(userCred)
 	if err, ok := err.(*pq.Error); ok {
 		fmt.Printf("auth_handler-Login-GetStoredPassword: %s\n", err)
 		message.Status = "Failed"
 		message.ErrorCode = fmt.Sprintf("%s", err.Code)
 		message.Message = "User does not exist"	
-		status = http.StatusBadRequest
+		status = http.StatusUnauthorized
 		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
+	userCred.Role = role
 
-	if err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(userCred.Password)); err != nil {
+	// Compare user password with hashed password stored in db
+	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(userCred.Password))
+	if err != nil {
 		fmt.Printf("auth_handler-Login-ComparedHashAndPassword: %s", err)
 		message.Status =  "Failed"
 		message.Message = "Username or password is wrong"
@@ -145,37 +149,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
-
 	// JWT Token Below
-	expirationTime := time.Now().Add(5 * time.Minute)
-
-	claims := &Claims{
-		Email: userCred.Email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	err = userCred.SetCookie(w, r)
 	if err != nil {
-		fmt.Printf("auth_handler-Login-SignedString: %s\n", err)
-		message.Status =  "Failed"
-		message.Message = "Failed to signed server secret key"
-		status = http.StatusInternalServerError
-		helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 		return
 	}
-
-	cookie := http.Cookie{
-		Name:    "token",
-		Value:   tokenString,
-		Expires: expirationTime,
-		Path:    "/",
-	}
-	http.SetCookie(w, &cookie)
 	
+	helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 	return
 }

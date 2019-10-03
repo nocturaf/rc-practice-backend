@@ -57,17 +57,18 @@ func (h *Handler) InsertUser(user models.User) (error){
 
 
 // GetStoredPassword returns user password stored in database, error if no such user exist
-func (h *Handler) GetStoredPassword(cred Credential)(string, error){
-	query := fmt.Sprintf("select password from users where email='%s';", cred.Email)
+func (h *Handler) GetStoredPassword(cred Credential)(string, int, error){
+	query := fmt.Sprintf("select password, role from users where email='%s';", cred.Email)
 	rows := h.DB.QueryRow(query)
 	
 	var storedPassword string
+	var role int
 	
-	err := rows.Scan(&storedPassword)
+	err := rows.Scan(&storedPassword, &role)
 	if err != nil {
 		fmt.Printf("user_service-GetStoredPassword-Scan: %s \n", err)
-		return "", err
+		return "", 99, err
 	}
 
-	return storedPassword, nil
+	return storedPassword, role, nil
 }
