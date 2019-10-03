@@ -33,26 +33,27 @@ func (c *Claims) RefreshToken(w http.ResponseWriter) error {
 }
 
 // CheckCookie for user authentication
-func CheckCookie(w http.ResponseWriter, r *http.Request) error{
+func CheckCookie(w http.ResponseWriter, r *http.Request) (*Claims, error) {
+	var claims *Claims
 	c, err := r.Cookie("token")
 	if err != nil {
 		if err != http.ErrNoCookie {
 			fmt.Printf("main-index-errnocookie: %s\n", err)
 			w.WriteHeader(http.StatusUnauthorized)
-			return err
+			return claims, err
 		}
 		fmt.Printf("main-index-cookie: %s\n", err)
 		w.WriteHeader(http.StatusBadRequest)
-		return err
+		return claims, err
 	}
 
 	tokenString := c.Value
-	claims := &Claims{}
+	claims = &Claims{}
 
 	err = godotenv.Load()
 	if err != nil {
 		fmt.Printf("main-index-Load: %s\n", err)
-		return err
+		return claims, err
 	}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -61,24 +62,24 @@ func CheckCookie(w http.ResponseWriter, r *http.Request) error{
 	if err != nil {
 		if err != jwt.ErrSignatureInvalid {
 			w.WriteHeader(http.StatusUnauthorized)
-			return err
+			return claims, err
 		}
 		fmt.Printf("main-index-ParseWithClaims: %s\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return err
+		w.WriteHeader(http.StatusUnauthorized)
+		return claims, err
 	}
 
 	if !token.Valid {
 		fmt.Printf("main-index-token.Valid: %s\n", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return err
+		w.WriteHeader(http.StatusBadRequest)
+		return claims, err
 	}
 
 	if time.Unix(claims.ExpiresAt, 0).Sub(time.Now()) < 1 * time.Minute {
 		claims.RefreshToken(w)	
 	} 
 
-	return nil
+	return claims, nil
 }
 
 // SetCookie method to set cookie with JWT token

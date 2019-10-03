@@ -1,4 +1,4 @@
-CREATE TABLE public.users (
+CREATE TABLE users (
     id serial NOT NULL,
     first_name character varying(255) NOT NULL,
     last_name character varying(255),
@@ -8,7 +8,4 @@ CREATE TABLE public.users (
 
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT email_unique UNIQUE (email)
-)
-WITH (
-    OIDS = FALSE
 );

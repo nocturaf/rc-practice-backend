@@ -10,7 +10,7 @@ import (
 
 // GetUsers Query all users
 func (h *Handler) GetUsers() ([]models.User, error) {
-	query := "SELECT id, first_name, last_name, email, password FROM users;"
+	query := "SELECT id, first_name, last_name, email, role FROM users;"
 	rows, err := h.DB.Query(query)
 	if err != nil {
 		fmt.Printf("user_service-GetUsers-query: %s\n", err)
@@ -27,7 +27,7 @@ func (h *Handler) GetUsers() ([]models.User, error) {
 			&user.FirstName,
 			&user.LastName,
 			&user.Email,
-			&user.Password,
+			&user.Role,
 		)
 		if err != nil {
 			fmt.Printf("user_service-GetUsers-Scan: %s \n",err)

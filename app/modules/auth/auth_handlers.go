@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,18 +15,27 @@ import (
 	"rc-practice-backend/app/models"
 )
 
-// GetUsersHandler returns all Users
+// GetUsersHandler returns all Users(Access: SuperAdmin only)
 // For auth jwt testing purpose only, ignore the file misplacement
 // DELETE LATER
 func (h *Handler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
-	// Get cookie for authentication
 	status := http.StatusOK
 	message := []byte("")
 
-	err := CheckCookie(w, r)
+	// Get cookie for authentication
+	claims, err := CheckCookie(w, r)
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-CheckCookie: %s\n", err)
-		status = http.StatusBadRequest
+		status = http.StatusUnauthorized
+		helpers.RenderJSON(w, message, status)
+		return
+	}
+
+	// Check if user is superadmin,
+	if err = claims.IsSuperAdmin(); err != nil {
+		status = http.StatusUnauthorized
+		message = []byte("Not Super Admin, Access Denied")
+		helpers.RenderJSON(w, message, status)
 		return
 	}
 
@@ -34,6 +44,7 @@ func (h *Handler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-GetUsers: %s\n", err)
 		status = http.StatusBadRequest
+		helpers.RenderJSON(w, message, status)
 		return
 	}
 
@@ -41,6 +52,7 @@ func (h *Handler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("auth_handler-GetUsersHandler-Marshal: %s\n", err)
 		status = http.StatusBadRequest
+		helpers.RenderJSON(w, message, status)
 		return
 	}
 
@@ -157,4 +169,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	
 	helpers.RenderJSON(w, helpers.MarshalJSON(message), status)
 	return
+}
+
+// IsSuperAdmin as described
+func (claims *Claims) IsSuperAdmin() error {
+	if claims.Role != 2{
+		return errors.New("Not Super Admin, Access Denied")
+	}
+	return nil
 }
